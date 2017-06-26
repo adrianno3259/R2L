@@ -1,0 +1,179 @@
+
+#define PL_TILE_SIZE 110
+
+#define PL_RELOAD_FRAMES 19
+
+#define PL_ANIM_RELOAD_START 1
+#define PL_ANIM_IDLE_START 0
+
+var& SDL_Open_Image tx_player_recharge = spawn SDL_Open_Image( &sdl!.ren, "res/spritesheet.png");
+var& SDL_Open_Image tx_player_idle = spawn SDL_Open_Image( &sdl!.ren, "res/char_idle.png");
+var& SDL_Open_Sound sound = spawn SDL_Open_Sound("res/shot_c.wav");
+
+code/await Player(var float x0, var float y0)-> void do
+	var float playerSize = 100.0;
+
+	var SDL_Rect fg = val SDL_Rect(x0 as int, y0 as int, playerSize as int, playerSize as int);
+	
+	
+	var int animationFrame = 0;
+	var int shotSpeed = 60;
+	var int shotSize = 10;	
+	var Vec2d shotSpawner = val Vec2d(0, 0);
+	var int spawnerOffset = 10;
+	
+	var float angle = 0.0;
+	var float radius = playerSize/2;
+	
+	var int x = x0 as int;
+	var int y = y0 as int;
+	var int vx = 0;
+	var int vy = 0; 
+	var int spd = 10;
+	var bool mouse = true;
+	var int dt = 0;
+	
+	var float playerOrigin_x = 0;
+	var float playerOrigin_y = 0;
+	var Vec2d playerDirection = _;
+	
+	code/tight NextFrame(var int f, var int max) -> int do
+		var int ret = f + 1;
+		if(ret == max) then
+			escape 0;
+		else
+			escape ret;
+		end
+	end
+	
+	code/tight UpdateOrigin(void) -> void do
+		outer.playerOrigin_x = outer.fg.x + outer.radius;
+		outer.playerOrigin_y = outer.fg.y + outer.radius;
+	end
+	
+	code/tight GetFrameRect(var int frame) -> SDL_Rect do
+		
+		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame,
+										0,
+										PL_TILE_SIZE,
+										PL_TILE_SIZE);
+		escape r;
+	end
+	
+	
+	// States of the keys:     W      A      S      D
+	//  					   |      |      |      |
+  //vector[4] bool states = [false, false, false, false];
+	
+
+	par do
+		every dt in SDL_DT do
+			x = x + vx*dt/100;
+			y = y + vy*dt/100;
+			call UpdateOrigin();
+
+			shotSpawner.x = playerOrigin_x + (playerDirection.x * (radius + spawnerOffset));
+			shotSpawner.y = playerOrigin_y + (playerDirection.y * (radius + spawnerOffset));
+
+		end
+	with // KEYBOARD W
+		loop do
+			var _SDL_KeyboardEvent&& kb;
+			kb = await SDL_KEYDOWN until kb:keysym.sym == _SDLK_w;
+			_printf("W\n");
+			vy = -spd;
+			kb = await SDL_KEYUP until kb:keysym.sym == _SDLK_w;
+			vy = 0;
+		end
+	with // KEYBOARD A
+		loop do
+			var _SDL_KeyboardEvent&& kb;
+			kb = await SDL_KEYDOWN until kb:keysym.sym == _SDLK_a;
+			_printf("A\n");
+			vx = -spd;
+			kb = await SDL_KEYUP until kb:keysym.sym == _SDLK_a;
+			vx = 0;
+		end		
+	with // KEYBOARD S
+		loop do
+			var _SDL_KeyboardEvent&& kb;
+			kb = await SDL_KEYDOWN until kb:keysym.sym == _SDLK_s;
+			_printf("S\n");
+			vy = spd;
+			kb = await SDL_KEYUP until kb:keysym.sym == _SDLK_s;
+			vy = 0;
+		end
+	with // KEYBOARD D
+		loop do
+			var _SDL_KeyboardEvent&& kb;
+			kb = await SDL_KEYDOWN until kb:keysym.sym == _SDLK_d;
+			_printf("D\n");
+			vx = spd;
+			kb = await SDL_KEYUP until kb:keysym.sym == _SDLK_d;
+			vx = 0;
+		end
+	with // MOUSE CLICK
+		pool[] Shot shots;
+		
+		loop do
+			var _SDL_MouseButtonEvent&& mb;
+			mb = await SDL_MOUSEBUTTONDOWN until mb:button == _SDL_BUTTON_LEFT;
+			_Mix_PlayChannel(-1, &&outer.sound.sound, 0);
+			spawn Shot( shotSpawner.x as int, 
+						shotSpawner.y as int,
+						mb:x, mb:y,
+						shotSpeed,
+						shotSize,
+						angle as int) in shots;
+						
+			spawn Shot( shotSpawner.x as int, 
+						shotSpawner.y as int,
+						mb:x + 2, mb:y + 2,
+						shotSpeed,
+						shotSize,
+						(angle + 1) as int) in shots;
+						
+			animationFrame = PL_ANIM_RELOAD_START;
+			_printf("sound\n");
+			await 750ms;
+		end
+	with
+		var _SDL_MouseMotionEvent&& mse;
+		every mse in SDL_MOUSEMOTION do
+			var Vec2d vec = call Vec_GetDirection(  playerOrigin_x as int, 
+													playerOrigin_y as int, 
+													mse:x, mse:y);
+			var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
+			angle = call Vec_AngleBetween(yaxis, vec);
+			//angle = angle;
+			vec = call Vec_Normalize(vec);
+			playerDirection = vec;
+			
+			
+		end
+	with 
+        every 80ms do
+			if(animationFrame >= PL_ANIM_RELOAD_START) then
+				animationFrame = call NextFrame(animationFrame, PL_RELOAD_FRAMES + PL_ANIM_RELOAD_START - 1);
+			end
+				
+        end
+
+	with   // RENDER
+		every SDL_REDRAW do	
+			//animationFrame = 10;
+			var SDL_Rect clip_rect = call GetFrameRect(animationFrame); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
+			
+			fg.y = y;
+			fg.x = x;
+			_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+								&&outer.tx_player_recharge.tex.tex, 
+								&&clip_rect as _SDL_Rect&&,
+								&&fg as _SDL_Rect&&, 
+								angle, null, _SDL_FLIP_NONE);
+			
+		end
+		
+	end
+
+end
