@@ -22,12 +22,12 @@ code/tight Vec_Normalize (var Vec2d v) -> Vec2d do
 
 end 
 
-code/tight Vec_GetDistance(var int x0, var int y0, var int xf, var int yf) -> float do
+code/tight Vec_GetDistance(var int x0, var int y0, var int xf, var int yf) -> Vec2d do
 	var int vx = xf - x0;
 	var int vy = yf - y0;
 	var Vec2d vec = val Vec2d(vx as float, vy as float);
-	var float r = call Vec_Length(vec);
-	escape r;
+	vec = call Vec_Length(vec);
+	escape vec;
 end
 
 code/tight Vec_GetDirection(var int x0, var int y0, var int xf, var int yf) -> Vec2d do

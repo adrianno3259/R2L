@@ -6,7 +6,7 @@ code/await Shot(var int x0, var int y0, var int xf, var int yf, var int spd, var
 	
 	var Vec2d direction = call Vec_GetDirection(x0, y0, xf, yf);
 	var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
-	var int angle = call Vec_AngleBetween(yaxis, direction) as int;
+	var int angle = call Vec_AngleBetween(yaxis, direction);
 	angle = angle + angleOffset;
 	
 	var SDL_Rect obj = val SDL_Rect(x0, y0, size, size);

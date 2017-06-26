@@ -176,7 +176,7 @@ code/await Player(var float x0, var float y0)-> void do
 								&&outer.tx_player_recharge.tex.tex, 
 								&&clip_rect as _SDL_Rect&&,
 								&&fg as _SDL_Rect&&, 
-								angle, null, _SDL_FLIP_NONE);
+								angle+4, null, _SDL_FLIP_NONE);
 			
 		end
 		
