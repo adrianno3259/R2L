@@ -3,17 +3,26 @@
 
 #define CEU_SDL_MODE_FRAME (1000/60)
 
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
+
+#define LEVEL_WIDTH 800
+#define LEVEL_HEIGHT 600
+
+
 native/pre do
 	##include<math.h>
 end
 
 native _acos, _atan2;
 native/nohold 
-    _SDL_RenderCopyEx;
+    _SDL_RenderCopyEx,
+	_SDL_ShowCursor;
 	
 native/const 
     _SDL_FLIP_NONE, 
-    _SDL_FLIP_VERTICAL;
+    _SDL_FLIP_VERTICAL,
+	_SDL_DISABLE;
 
 
 var&? SDL_Init sdl = spawn SDL_Init("Right 2 Live", 800,600, SDL_Color(0xFF,0xFF,0x00,0xFF));
@@ -28,10 +37,11 @@ end
 
 
 watching sdl do
+
+	
 	
 	#include "shot.ceu"
-
-		
+	
 	var& SDL_Open_Image tx_crosshair = spawn SDL_Open_Image( &sdl!.ren, "res/crosshair_lowres.png");
 
 	code/await Crosshair(void) -> void do
@@ -50,17 +60,66 @@ watching sdl do
 		end
 	end
 	
-	#include "player.ceu"
+	var SDL_Rect camera = val SDL_Rect( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
 	
+	//#include "map.ceu"
+	//pool[] Block blocks;
+	
+	//spawn Block(200, 200) in blocks;
+	
+	
+	#include "floorblock.ceu"
+	pool[] FloorBlock floor;
+//	spawn FloorBlock(0,0,BL_COBBLE);
+	pool[] RoofBlock roof;
+	
+	var int i;
+	loop i in [0 -> 10] do
+		spawn RoofBlock(i,0,1,BL_ROOF_SIDEWAYS) in roof;
+	end
+	loop i in [0 -> 10] do
+		var int j;
+		loop j in [1 -> 10] do
+				spawn FloorBlock(i,j,BL_COBBLE) in floor;
+		end
+	end
+	
+	#include "player.ceu"
 	//var& SDL_Open_Image img = spawn SDL_Open_Image(&sdl!.ren, "res/crosshair_lowres.png");
     //var SDL_Rect rect = val SDL_Rect(10,10 , img.tex.width,img.tex.height);
-	spawn Player(100.0, 100.0);
+	var& Player p = spawn Player(100.0, 100.0);
 	spawn Crosshair();
-    
+	
 	
 	every SDL_REDRAW do
         //_SDL_RenderCopy(&&sdl!.ren, &&img.tex.tex, null, &&rect as _SDL_Rect&&);
-    end
+		
+		//_printf(" player %d, %d\n", p.playerOrigin_x as int, p.playerOrigin_y as int);
+		// Mover a camera
+		camera.x = (p.playerOrigin_x as int);// - SCREEN_WIDTH/2) as int;
+		camera.y = (p.playerOrigin_y as int);// - SCREEN_HEIGHT/2) as int;
+		
+		
+		if (camera.x < 0) then
+			camera.x = 0;
+		end
+		if (camera.y < 0) then
+			camera.y = 0;
+		end
+		if( camera.x > LEVEL_WIDTH - camera.w ) then
+			camera.x = LEVEL_WIDTH - camera.w;
+		end
+		if( camera.y > LEVEL_HEIGHT - camera.h ) then
+			camera.y = LEVEL_HEIGHT - camera.h;
+		end
+		
+		
+		//_SDL_SetRenderDrawColor (sdl!.ren, 0xFF, 0xFF, 0xFF, 0xFF );
+		//_SDL_RenderClear(sdl!.ren);
+		
+		
+	
+	end
 	
 	//await SDL_QUIT;
 	

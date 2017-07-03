@@ -1,6 +1,6 @@
 
 #define PL_TILE_SIZE 110
-#define PL_FRAME_OFFSET 10
+#define PL_FRAME_OFFSET_HORIZONTAL 5
 
 #define PL_RELOAD_FRAMES 19
 
@@ -21,7 +21,7 @@ var& SDL_Open_Sound sound = spawn SDL_Open_Sound("res/shot_c.wav");
 
 code/await Player(var float x0, var float y0)-> 
 				(var float playerOrigin_x, var float playerOrigin_y) -> FOREVER do
-	var float playerSize = 100.0;
+	var float playerSize = 80.0;
 
 	var SDL_Rect fg = val SDL_Rect(x0 as int, y0 as int, playerSize as int, playerSize as int);
 	
@@ -62,11 +62,17 @@ code/await Player(var float x0, var float y0)->
 	end
 	
 	code/tight GetFrameRect(var int frame) -> SDL_Rect do
+
+		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame + PL_FRAME_OFFSET_HORIZONTAL,
+										0,
+										PL_TILE_SIZE - 2*PL_FRAME_OFFSET_HORIZONTAL,
+										PL_TILE_SIZE );		
 		
+		/*
 		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame + PL_FRAME_OFFSET,
 										0 + PL_FRAME_OFFSET,
 										PL_TILE_SIZE - 2*PL_FRAME_OFFSET,
-										PL_TILE_SIZE - 2*PL_FRAME_OFFSET);
+										PL_TILE_SIZE - 2*PL_FRAME_OFFSET);*/
 		escape r;
 	end
 	
@@ -87,21 +93,22 @@ code/await Player(var float x0, var float y0)->
 			var int xf = x + vx*dt/100;
 			var int yf = y + vy*dt/100;
  			
-			_printf("xf = %d, yf = %d, LEVEL_WIDTH = %d, LEVEL_HEIGHT = %d\n",
-			xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
+			//_printf("xf = %d, yf = %d, LEVEL_WIDTH = %d, LEVEL_HEIGHT = %d\n",
+			//xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
 			
 			//_printf()
-			if xf < 0 or xf > LEVEL_WIDTH - radius then
+			if xf < 0 or xf > LEVEL_WIDTH - 2*radius then
 				go_x = false;
 			end
 			
-			if yf < 0 or yf > LEVEL_HEIGHT - radius then
+			if yf < 0 or yf > LEVEL_HEIGHT - 2*radius then
 				go_y = false;
 			end
 			
 			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
 			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
 			
+			/*
 			var&? Block block;
 			
 			loop block in outer.blocks do
@@ -116,7 +123,7 @@ code/await Player(var float x0, var float y0)->
 				end
 				
 			end
-			
+			*/
 			if go_x then
 				x = xf;
 			end

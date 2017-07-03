@@ -1,12 +1,12 @@
 #define SH_TILE_SIZE 20
 
-var& SDL_Open_Image tx_shot = spawn SDL_Open_Image( &sdl!.ren, "res/shot_b.png");
+var& SDL_Open_Image tx_shot = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
 
 code/await Shot(var int x0, var int y0, var int xf, var int yf, var int spd, var int size, var int angleOffset) -> void do
 	
 	var Vec2d direction = call Vec_GetDirection(x0, y0, xf, yf);
 	var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
-	var int angle = call Vec_AngleBetween(yaxis, direction);
+	var int angle = call Vec_AngleBetween(yaxis, direction) as int;
 	angle = angle + angleOffset;
 	
 	var SDL_Rect obj = val SDL_Rect(x0, y0, size, size);

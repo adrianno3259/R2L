@@ -1,0 +1,75 @@
+#define GRID_SIZE_X 8
+#define GRID_SIZE_Y 6
+
+#define BLOCK_SIZE 100
+
+#define BL_COBBLE 0
+
+//vector[1] &SDL_Open_Image tx_all;
+//tx_all[0] = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
+
+var& SDL_Open_Image tx_cobble = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
+
+code/await FloorBlock( var int idx_x, var int idx_y, var int tex ) -> void do
+	
+	code/tight X_pixel( var int idx_x ) -> int do
+		escape ((idx_x * BLOCK_SIZE) as int);
+	end	
+	
+	code/tight Y_pixel( var int idx_y ) -> int do		
+		escape ((idx_y * BLOCK_SIZE) as int);
+	end
+
+	var int px = call X_pixel(idx_x);
+	var int py = call Y_pixel(idx_y);
+	
+	var SDL_Rect surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
+	
+	
+/*	var&& SDL_Open_Image tx_tmp;
+	if (tex == BL_COBBLE) then
+		tx_tmp = &&outer.tx_cobble;
+	end*/
+	
+	every SDL_REDRAW do
+		//var& SDL_
+		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+							&&outer.tx_cobble.tex.tex, 
+							null,
+							&&surface as _SDL_Rect&&, 
+							0, null, _SDL_FLIP_NONE);
+	end;
+end
+
+
+var& SDL_Open_Image tx_roof = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/rooftop.tiff");
+
+code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) -> void do
+	
+	code/tight X_pixel( var int idx_x ) -> int do
+		escape ((idx_x * BLOCK_SIZE) as int);
+	end	
+	
+	code/tight Y_pixel( var int idx_y ) -> int do		
+		escape ((idx_y * BLOCK_SIZE) as int);
+	end
+
+	var int px = call X_pixel(idx_x);
+	var int py = call Y_pixel(idx_y);
+	
+	var SDL_Rect surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
+	
+	
+/*	var&& SDL_Open_Image tx_tmp;
+	if (tex == BL_COBBLE) then
+		tx_tmp = &&outer.tx_cobble;
+	end*/
+	
+	every SDL_REDRAW do
+		//var& SDL_
+		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+							&&outer.tx_roof.tex.tex, 
+							null, &&surface as _SDL_Rect&&, 
+							angle, null, _SDL_FLIP_NONE);
+	end;
+end

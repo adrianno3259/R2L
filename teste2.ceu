@@ -62,11 +62,29 @@ watching sdl do
 	
 	var SDL_Rect camera = val SDL_Rect( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
 	
-	#include "map.ceu"
-	pool[] Block blocks;
+	//#include "map.ceu"
+	//pool[] Block blocks;
 	
-	spawn Block(200, 200) in blocks;
+	//spawn Block(200, 200) in blocks;
 	
+	
+	#include "floorblock.ceu"
+	pool[] FloorBlock floor;
+//	spawn FloorBlock(0,0,BL_COBBLE);
+	pool[] RoofBlock roof;
+	
+	spawn RoofBlock(3,3,1,BL_ROOF_SIDEWAYS) in roof;
+	
+	var int i;
+	loop i in [0 -> 10] do
+		spawn RoofBlock(i,0,1,BL_ROOF_SIDEWAYS) in roof;
+	end
+	loop i in [0 -> 10] do
+		var int j;
+		loop j in [1 -> 10] do
+				spawn FloorBlock(i,j,BL_COBBLE) in floor;
+		end
+	end
 	
 	#include "player.ceu"
 	//var& SDL_Open_Image img = spawn SDL_Open_Image(&sdl!.ren, "res/crosshair_lowres.png");
@@ -78,7 +96,7 @@ watching sdl do
 	every SDL_REDRAW do
         //_SDL_RenderCopy(&&sdl!.ren, &&img.tex.tex, null, &&rect as _SDL_Rect&&);
 		
-		_printf(" player %d, %d\n", p.playerOrigin_x as int, p.playerOrigin_y as int);
+		//_printf(" player %d, %d\n", p.playerOrigin_x as int, p.playerOrigin_y as int);
 		// Mover a camera
 		camera.x = (p.playerOrigin_x as int);// - SCREEN_WIDTH/2) as int;
 		camera.y = (p.playerOrigin_y as int);// - SCREEN_HEIGHT/2) as int;
