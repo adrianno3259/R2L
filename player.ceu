@@ -1,6 +1,7 @@
 
 #define PL_TILE_SIZE 110
 #define PL_FRAME_OFFSET_HORIZONTAL 5
+#define PL_FRAME_OFFSET_VERTICAL 20
 
 #define PL_RELOAD_FRAMES 19
 
@@ -34,6 +35,10 @@ code/await Player(var float x0, var float y0)->
 	
 	var float angle = 0.0;
 	var float radius = playerSize/2;
+
+	var int target_x = 0;
+	var int target_y = 0;
+
 	
 	var int x = x0 as int;
 	var int y = y0 as int;
@@ -64,7 +69,7 @@ code/await Player(var float x0, var float y0)->
 	code/tight GetFrameRect(var int frame) -> SDL_Rect do
 
 		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame + PL_FRAME_OFFSET_HORIZONTAL,
-										0,
+										PL_FRAME_OFFSET_VERTICAL,
 										PL_TILE_SIZE - 2*PL_FRAME_OFFSET_HORIZONTAL,
 										PL_TILE_SIZE );		
 		
@@ -108,14 +113,14 @@ code/await Player(var float x0, var float y0)->
 			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
 			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
 			
-			/*
-			var&? Block block;
 			
-			loop block in outer.blocks do
-				if (call Intersects(&block!.fg, &tmp_x)) then
+			var&? RoofBlock block;
+			
+			loop block in outer.roof do
+				if (call Intersects(&block!.surface, &tmp_x)) then
 					go_x = false;
 				end
-				if (call Intersects(&block!.fg, &tmp_y)) then
+				if (call Intersects(&block!.surface, &tmp_y)) then
 					go_y = false;
 				end
 				if ( go_x == false) and (go_y == false) then
@@ -123,7 +128,7 @@ code/await Player(var float x0, var float y0)->
 				end
 				
 			end
-			*/
+			
 			if go_x then
 				x = xf;
 			end
@@ -133,6 +138,16 @@ code/await Player(var float x0, var float y0)->
 			end
 			
 			call UpdateOrigin();
+
+			var Vec2d vec = call Vec_GetDirection(  playerOrigin_x as int, 
+													playerOrigin_y as int, 
+													target_x, target_y);
+			var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
+			angle = call Vec_AngleBetween(yaxis, vec);
+			//angle = angle;
+			vec = call Vec_Normalize(vec);
+			playerDirection = vec;
+			
 
 			shotSpawner.x = playerOrigin_x + (playerDirection.x * (radius + spawnerOffset));
 			shotSpawner.y = playerOrigin_y + (playerDirection.y * (radius + spawnerOffset));
@@ -203,18 +218,13 @@ code/await Player(var float x0, var float y0)->
 				await 750ms;
 			end
 		end
-	with
+	with // MOUSE MOVEMENT	
 		var _SDL_MouseMotionEvent&& mse;
 		every mse in SDL_MOUSEMOTION do
-			var Vec2d vec = call Vec_GetDirection(  playerOrigin_x as int, 
-													playerOrigin_y as int, 
-													mse:x, mse:y);
-			var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
-			angle = call Vec_AngleBetween(yaxis, vec);
-			//angle = angle;
-			vec = call Vec_Normalize(vec);
-			playerDirection = vec;
 			
+
+			target_x = mse:x;
+			target_y = mse:y;
 			
 		end
 	with 

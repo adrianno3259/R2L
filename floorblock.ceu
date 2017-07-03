@@ -46,9 +46,10 @@ end
 #define BL_ROOF_SIDEWAYS 0
 #define BL_ROOF_UPDOWN 90
 
-var& SDL_Open_Image tx_roof = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/rooftop.tiff");
+var& SDL_Open_Image tx_roof = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/crates.png");
 
-code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) -> void do
+code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) -> 
+		(var SDL_Rect surface) -> FOREVER do
 	
 	code/tight X_pixel( var int idx_x ) -> int do
 		escape ((idx_x * BLOCK_SIZE) as int);
@@ -61,7 +62,7 @@ code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) 
 	var int px = call X_pixel(idx_x);
 	var int py = call Y_pixel(idx_y);
 	
-	var SDL_Rect surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
+	surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	
 	
 /*	var&& SDL_Open_Image tx_tmp;
@@ -77,3 +78,4 @@ code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) 
 							angle, null, _SDL_FLIP_NONE);
 	end;
 end
+
