@@ -1,16 +1,26 @@
 
 #define PL_TILE_SIZE 110
+#define PL_FRAME_OFFSET 10
 
 #define PL_RELOAD_FRAMES 19
 
 #define PL_ANIM_RELOAD_START 1
 #define PL_ANIM_IDLE_START 0
 
+
+code/tight Intersects (var& SDL_Rect rct1, var& SDL_Rect rct2) -> bool do
+    escape rct1.x        <= rct2.x+rct2.w and
+           rct1.x+rct1.w >= rct2.x        and
+           rct1.y        <= rct2.y+rct2.h and
+           rct1.y+rct1.h >= rct2.y;
+end
+
 var& SDL_Open_Image tx_player_recharge = spawn SDL_Open_Image( &sdl!.ren, "res/spritesheet.png");
 var& SDL_Open_Image tx_player_idle = spawn SDL_Open_Image( &sdl!.ren, "res/char_idle.png");
 var& SDL_Open_Sound sound = spawn SDL_Open_Sound("res/shot_c.wav");
 
-code/await Player(var float x0, var float y0)-> void do
+code/await Player(var float x0, var float y0)-> 
+				(var float playerOrigin_x, var float playerOrigin_y) -> FOREVER do
 	var float playerSize = 100.0;
 
 	var SDL_Rect fg = val SDL_Rect(x0 as int, y0 as int, playerSize as int, playerSize as int);
@@ -33,8 +43,8 @@ code/await Player(var float x0, var float y0)-> void do
 	var bool mouse = true;
 	var int dt = 0;
 	
-	var float playerOrigin_x = 0;
-	var float playerOrigin_y = 0;
+	/* var float */ playerOrigin_x = 0;
+	/* var float */ playerOrigin_y = 0;
 	var Vec2d playerDirection = _;
 	
 	code/tight NextFrame(var int f, var int max) -> int do
@@ -53,10 +63,10 @@ code/await Player(var float x0, var float y0)-> void do
 	
 	code/tight GetFrameRect(var int frame) -> SDL_Rect do
 		
-		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame,
-										0,
-										PL_TILE_SIZE,
-										PL_TILE_SIZE);
+		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame + PL_FRAME_OFFSET,
+										0 + PL_FRAME_OFFSET,
+										PL_TILE_SIZE - 2*PL_FRAME_OFFSET,
+										PL_TILE_SIZE - 2*PL_FRAME_OFFSET);
 		escape r;
 	end
 	
@@ -68,10 +78,53 @@ code/await Player(var float x0, var float y0)-> void do
 	par do
 		every dt in SDL_DT do
 			//_printf("%d, %d, %d, %d\n", states[0], states[1], states[2], states[3]);
+			var bool go_x = true;
+			var bool go_y = true;
+			
 			vx = ((states[1]as int)*(-spd)) + ((states[3] as int)*spd);
 			vy = ((states[0]as int)*(-spd)) + ((states[2] as int)*spd);
-			x = x + vx*dt/100;
-			y = y + vy*dt/100;
+			
+			var int xf = x + vx*dt/100;
+			var int yf = y + vy*dt/100;
+ 			
+			_printf("xf = %d, yf = %d, LEVEL_WIDTH = %d, LEVEL_HEIGHT = %d\n",
+			xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
+			
+			//_printf()
+			if xf < 0 or xf > LEVEL_WIDTH - radius then
+				go_x = false;
+			end
+			
+			if yf < 0 or yf > LEVEL_HEIGHT - radius then
+				go_y = false;
+			end
+			
+			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
+			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
+			
+			var&? Block block;
+			
+			loop block in outer.blocks do
+				if (call Intersects(&block!.fg, &tmp_x)) then
+					go_x = false;
+				end
+				if (call Intersects(&block!.fg, &tmp_y)) then
+					go_y = false;
+				end
+				if ( go_x == false) and (go_y == false) then
+					break;
+				end
+				
+			end
+			
+			if go_x then
+				x = xf;
+			end
+			
+			if go_y then
+				y = yf; 
+			end
+			
 			call UpdateOrigin();
 
 			shotSpawner.x = playerOrigin_x + (playerDirection.x * (radius + spawnerOffset));
@@ -140,7 +193,7 @@ code/await Player(var float x0, var float y0)-> void do
 						
 				animationFrame = PL_ANIM_RELOAD_START;
 				_printf("sound\n");
-				//await 750ms;
+				await 750ms;
 			end
 		end
 	with
@@ -170,8 +223,10 @@ code/await Player(var float x0, var float y0)-> void do
 			//animationFrame = 10;
 			var SDL_Rect clip_rect = call GetFrameRect(animationFrame); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
 			
-			fg.y = y;
-			fg.x = x;
+			
+			fg.x = x;// - outer.camera.x/2;
+			fg.y = y;// - outer.camera.y/2;
+			
 			_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
 								&&outer.tx_player_recharge.tex.tex, 
 								&&clip_rect as _SDL_Rect&&,
