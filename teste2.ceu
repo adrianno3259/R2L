@@ -3,8 +3,8 @@
 
 #define CEU_SDL_MODE_FRAME (1000/60)
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 900
 
 #define LEVEL_WIDTH 800
 #define LEVEL_HEIGHT 600
@@ -14,7 +14,7 @@ native/pre do
 	##include<math.h>
 end
 
-native _acos, _atan2;
+native _acos, _atan2;// _sin, _cos;
 native/nohold 
     _SDL_RenderCopyEx,
 	_SDL_ShowCursor;
@@ -35,6 +35,8 @@ end
 
 #include "vecmath.ceu"
 #include "utils.ceu"
+
+event void renderedPlayer;
 
 watching sdl do
 	
@@ -69,10 +71,17 @@ watching sdl do
 //	vector
 	
 	#include "floorblock.ceu"
-	pool[] FloorBlock floor;
 
 	pool[] ObstacleBlock roof;
-//	spawn ObstacleBlock(1,1,BL_COBBLE,0) in roof;
+	pool[] FloorBlock floor;
+	
+	#include "player.ceu"
+	
+	var& Player p = spawn Player(100.0, 100.0);
+
+
+
+
 		
 //	spawn RoofBlock(3,3,1,BL_ROOF_SIDEWAYS) in roof;
 
@@ -90,11 +99,7 @@ watching sdl do
 
 		end
 	end
-	
-	#include "player.ceu"
-	//var& SDL_Open_Image img = spawn SDL_Open_Image(&sdl!.ren, "res/crosshair_lowres.png");
-    //var SDL_Rect rect = val SDL_Rect(10,10 , img.tex.width,img.tex.height);
-	var& Player p = spawn Player(100.0, 100.0);
+
 	
 	#include "map.ceu"
 

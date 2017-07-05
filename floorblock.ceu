@@ -67,6 +67,8 @@ code/await ObstacleBlock( var int idx_x, var int idx_y, var&? SDL_Open_Image img
 	surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	
 	every SDL_REDRAW do
+
+		//await outer.renderedPlayer until 1 ms;
 		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
 							&&img!.tex.tex, 
 							null, &&surface as _SDL_Rect&&, 

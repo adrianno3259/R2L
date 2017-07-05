@@ -51,6 +51,11 @@ code/tight RadToDegree( var float rad) -> float do
 	escape (rad * 180)/PI;
 end
 
+code/tight DegreeToRad( var float deg ) -> float do
+	escape (deg*PI)/180;
+
+end
+
  code/tight Vec_AngleBetween(var Vec2d v1, var Vec2d v2) -> float do
 	//Vec_Print(v1);
 	//Vec_Print(v2);

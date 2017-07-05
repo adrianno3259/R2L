@@ -101,11 +101,11 @@ code/await Player(var float x0, var float y0)->
 			//xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
 			
 			//_printf()
-			if xf < 0 or xf > LEVEL_WIDTH - 2*radius then
+			if xcf < 0 or xcf > LEVEL_WIDTH - 2*radius then
 				go_x = false;
 			end
 			
-			if yf < 0 or yf > LEVEL_HEIGHT - 2*radius then
+			if ycf < 0 or ycf > LEVEL_HEIGHT - 2*radius then
 				go_y = false;
 			end
 			
@@ -193,7 +193,7 @@ code/await Player(var float x0, var float y0)->
 			states[3] = false;
 		end
 	with // MOUSE CLICK
-		pool[100] Shot shots;
+		pool[] Shot shots;
 		//var& Anim anim = spawn Anim();
 		#if 0
 		code/await Anim (var& Rect fg) -> (event void start) -> FOREVER do
@@ -234,18 +234,42 @@ code/await Player(var float x0, var float y0)->
 
 			
 				_Mix_PlayChannel(-1, &&outer.sound.sound, 0);
-			
-				//loop _ in [0 -> 8[ do
-					//await 1s;
-					//_printf("Hello World!\n");
-				//end
-		
+				var Vec2d dir = call Vec_GetDirection(shotSpawner.x as int, 
+							                          shotSpawner.y as int, 
+													  mb:x, mb:y);
+
+				var int i;
+				loop i in [0 -> 8[ do
+					var int rot_angle = (i-4)*4;
+
+					var float cos = _cos(call DegreeToRad(rot_angle as float));
+					var float sin = _sin(call DegreeToRad(rot_angle as float));
+
+					var float xi = dir.x*cos - dir.y*sin;
+					var float yi = dir.x*sin + dir.y*cos;
+
+					var Vec2d tmp_vec = val Vec2d(xi, yi);
+					
+					spawn Shot( shotSpawner.x as int, 
+								shotSpawner.y as int,
+								tmp_vec,
+								shotSpeed +((_rand()%2)*(-1)) * (_rand()%3) ,
+								shotSize,
+								0) in shots;
+
+					_printf("Hello World!\n");
+				end
+				/*
+				var Vec2d dir = call Vec_GetDirection(shotSpawner.x as int, 
+							                          shotSpawner.y as int, 
+													  mb:x, mb:y);
+
 				spawn Shot( shotSpawner.x as int, 
 							shotSpawner.y as int,
-							mb:x, mb:y,
+							dir,
 							shotSpeed,
 							shotSize,
-							0) in shots;
+							0) in shots;*/
 				//emit anim.start;		
 				animationFrame = PL_ANIM_RELOAD_START;
 				_printf("sound\n");
@@ -287,7 +311,7 @@ code/await Player(var float x0, var float y0)->
 								&&clip_rect as _SDL_Rect&&,
 								&&fg as _SDL_Rect&&, 
 								angle, null, _SDL_FLIP_NONE);
-			
+			emit outer.renderedPlayer;
 		end
 		
 	end
