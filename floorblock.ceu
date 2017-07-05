@@ -3,14 +3,28 @@
 
 #define BLOCK_SIZE 100
 
-#define BL_COBBLE 0
 
-//vector[1] &SDL_Open_Image tx_all;
-//tx_all[0] = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
+#define BL_EDGE_UP 0
+#define BL_EDGE_RIGHT 90
+#define BL_EDGE_DOWN 180
+#define BL_EDGE_LEFT 270
 
-var& SDL_Open_Image tx_cobble = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
+#define BL_CORNER_DOWN_RIGHT 0
+#define BL_CORNER_DOWN_LEFT 90
+#define BL_CORNER_UP_LEFT 180
+#define BL_CORNER_UP_RIGHT 270
 
-code/await FloorBlock( var int idx_x, var int idx_y, var int tex ) -> void do
+//pool[] SDL_Open_Image tx_all;
+//spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif") in tx_all;
+
+var& SDL_Open_Image tx_COBBLE 			= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
+var& SDL_Open_Image tx_ROOF_EDGE 		= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/rooftop_edge.png");
+var& SDL_Open_Image tx_ROOF_CORNER 		= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/rooftop_corner.png");
+var& SDL_Open_Image tx_SIDEWALK_CORNER 	= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/sidewalk_corner.png");
+var& SDL_Open_Image tx_SIDEWALK_EDGE 	= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/sidewalk_edge.png");
+var& SDL_Open_Image tx_CRATES 			= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/crates.png");
+
+code/await FloorBlock(var int idx_x, var int idx_y, var&? SDL_Open_Image img, var int angle) -> void do
 	
 	code/tight X_pixel( var int idx_x ) -> int do
 		escape ((idx_x * BLOCK_SIZE) as int);
@@ -25,30 +39,18 @@ code/await FloorBlock( var int idx_x, var int idx_y, var int tex ) -> void do
 	
 	var SDL_Rect surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	
-	
-/*	var&& SDL_Open_Image tx_tmp;
-	if (tex == BL_COBBLE) then
-		tx_tmp = &&outer.tx_cobble;
-	end*/
-	
 	every SDL_REDRAW do
 		//var& SDL_
 		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
-							&&outer.tx_cobble.tex.tex, 
+							&&img!.tex.tex, 
 							null,
 							&&surface as _SDL_Rect&&, 
-							0, null, _SDL_FLIP_NONE);
+							angle, null, _SDL_FLIP_NONE);
 	end;
 end
 
 
-
-#define BL_ROOF_SIDEWAYS 0
-#define BL_ROOF_UPDOWN 90
-
-var& SDL_Open_Image tx_roof = spawn SDL_Open_Image( &sdl!.ren, "res/blocks/crates.png");
-
-code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) -> 
+code/await ObstacleBlock( var int idx_x, var int idx_y, var&? SDL_Open_Image img, var int angle) -> 
 		(var SDL_Rect surface) -> FOREVER do
 	
 	code/tight X_pixel( var int idx_x ) -> int do
@@ -64,16 +66,9 @@ code/await RoofBlock( var int idx_x, var int idx_y, var int tex, var int angle) 
 	
 	surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	
-	
-/*	var&& SDL_Open_Image tx_tmp;
-	if (tex == BL_COBBLE) then
-		tx_tmp = &&outer.tx_cobble;
-	end*/
-	
 	every SDL_REDRAW do
-		//var& SDL_
 		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
-							&&outer.tx_roof.tex.tex, 
+							&&img!.tex.tex, 
 							null, &&surface as _SDL_Rect&&, 
 							angle, null, _SDL_FLIP_NONE);
 	end;

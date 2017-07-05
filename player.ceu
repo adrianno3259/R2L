@@ -9,12 +9,6 @@
 #define PL_ANIM_IDLE_START 0
 
 
-code/tight Intersects (var& SDL_Rect rct1, var& SDL_Rect rct2) -> bool do
-    escape rct1.x        <= rct2.x+rct2.w and
-           rct1.x+rct1.w >= rct2.x        and
-           rct1.y        <= rct2.y+rct2.h and
-           rct1.y+rct1.h >= rct2.y;
-end
 
 var& SDL_Open_Image tx_player_recharge = spawn SDL_Open_Image( &sdl!.ren, "res/spritesheet.png");
 var& SDL_Open_Image tx_player_idle = spawn SDL_Open_Image( &sdl!.ren, "res/char_idle.png");
@@ -25,7 +19,7 @@ code/await Player(var float x0, var float y0)->
 	var float playerSize = 80.0;
 
 	var SDL_Rect fg = val SDL_Rect(x0 as int, y0 as int, playerSize as int, playerSize as int);
-	
+	var SDL_Rect collider = val SDL_Rect((x0 + 30) as int, (y0+30) as int, (playerSize-60) as int, (playerSize-60) as int);
 	
 	var int animationFrame = 0;
 	var int shotSpeed = 60;
@@ -39,6 +33,8 @@ code/await Player(var float x0, var float y0)->
 	var int target_x = 0;
 	var int target_y = 0;
 
+	var int xc = (x0 + 30) as int;
+	var int yc = (y0 + 30) as int;
 	
 	var int x = x0 as int;
 	var int y = y0 as int;
@@ -97,6 +93,9 @@ code/await Player(var float x0, var float y0)->
 			
 			var int xf = x + vx*dt/100;
 			var int yf = y + vy*dt/100;
+			
+			var int xcf = collider.x + vx*dt/100;
+			var int ycf = collider.y + vy*dt/100;
  			
 			//_printf("xf = %d, yf = %d, LEVEL_WIDTH = %d, LEVEL_HEIGHT = %d\n",
 			//xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
@@ -110,11 +109,13 @@ code/await Player(var float x0, var float y0)->
 				go_y = false;
 			end
 			
-			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
-			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
+//			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
+//			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
 			
+			var SDL_Rect tmp_x = val SDL_Rect(xcf, collider.y, playerSize as int, playerSize as int);
+			var SDL_Rect tmp_y = val SDL_Rect(collider.x, ycf, playerSize as int, playerSize as int);
 			
-			var&? RoofBlock block;
+			var&? ObstacleBlock block;
 			
 			loop block in outer.roof do
 				if (call Intersects(&block!.surface, &tmp_x)) then
@@ -131,10 +132,12 @@ code/await Player(var float x0, var float y0)->
 			
 			if go_x then
 				x = xf;
+				xc = xcf;
 			end
 			
 			if go_y then
 				y = yf; 
+				yc = ycf;
 			end
 			
 			call UpdateOrigin();
@@ -191,6 +194,37 @@ code/await Player(var float x0, var float y0)->
 		end
 	with // MOUSE CLICK
 		pool[100] Shot shots;
+		//var& Anim anim = spawn Anim();
+		#if 0
+		code/await Anim (var& Rect fg) -> (event void start) -> FOREVER do
+			await start;
+			loop do
+				watching start do
+					var int i = 1;
+					spawn do
+						every SDL_REDRAW do	
+							//animationFrame = 10;
+							var SDL_Rect clip_rect = call GetFrameRect(io); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
+			
+			
+							fg.x = x;// - outer.camera.x/2;
+							fg.y = y;// - outer.camera.y/2;
+			
+							_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+												&&outer.tx_player_recharge.tex.tex, 
+												&&clip_rect as _SDL_Rect&&,
+												&&fg as _SDL_Rect&&, 
+												angle, null, _SDL_FLIP_NONE);
+			
+						end
+					end
+					loop i in [1 -> 19] do
+						<...>
+					end
+				end
+			end
+		end
+		#endif
 		
 		loop do
 			var _SDL_MouseButtonEvent&& mb;
@@ -212,7 +246,7 @@ code/await Player(var float x0, var float y0)->
 							shotSpeed,
 							shotSize,
 							0) in shots;
-						
+				//emit anim.start;		
 				animationFrame = PL_ANIM_RELOAD_START;
 				_printf("sound\n");
 				await 750ms;
@@ -240,6 +274,10 @@ code/await Player(var float x0, var float y0)->
 			//animationFrame = 10;
 			var SDL_Rect clip_rect = call GetFrameRect(animationFrame); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
 			
+			collider.x = xc;
+			collider.y = yc;
+			_SDL_SetRenderDrawColor(&&outer.sdl!.ren, 0x00,0xFF,0x00,0xFF);
+			_SDL_RenderFillRect(&&outer.sdl!.ren, (&&collider as _SDL_Rect&&));
 			
 			fg.x = x;// - outer.camera.x/2;
 			fg.y = y;// - outer.camera.y/2;

@@ -1,6 +1,7 @@
 
 #define PL_TILE_SIZE 110
-#define PL_FRAME_OFFSET_HORIZONTAL 20
+#define PL_FRAME_OFFSET_HORIZONTAL 5
+#define PL_FRAME_OFFSET_VERTICAL 20
 
 #define PL_RELOAD_FRAMES 19
 
@@ -8,12 +9,6 @@
 #define PL_ANIM_IDLE_START 0
 
 
-code/tight Intersects (var& SDL_Rect rct1, var& SDL_Rect rct2) -> bool do
-    escape rct1.x        <= rct2.x+rct2.w and
-           rct1.x+rct1.w >= rct2.x        and
-           rct1.y        <= rct2.y+rct2.h and
-           rct1.y+rct1.h >= rct2.y;
-end
 
 var& SDL_Open_Image tx_player_recharge = spawn SDL_Open_Image( &sdl!.ren, "res/spritesheet.png");
 var& SDL_Open_Image tx_player_idle = spawn SDL_Open_Image( &sdl!.ren, "res/char_idle.png");
@@ -24,7 +19,7 @@ code/await Player(var float x0, var float y0)->
 	var float playerSize = 80.0;
 
 	var SDL_Rect fg = val SDL_Rect(x0 as int, y0 as int, playerSize as int, playerSize as int);
-	
+	var SDL_Rect collider = val SDL_Rect((x0 + 20) as int, (y0+20) as int, (playerSize-40) as int, (playerSize-40) as int);
 	
 	var int animationFrame = 0;
 	var int shotSpeed = 60;
@@ -34,6 +29,12 @@ code/await Player(var float x0, var float y0)->
 	
 	var float angle = 0.0;
 	var float radius = playerSize/2;
+
+	var int target_x = 0;
+	var int target_y = 0;
+
+	var int xc = (x0 + 20) as int;
+	var int yc = (y0 + 20) as int;
 	
 	var int x = x0 as int;
 	var int y = y0 as int;
@@ -64,7 +65,7 @@ code/await Player(var float x0, var float y0)->
 	code/tight GetFrameRect(var int frame) -> SDL_Rect do
 
 		var SDL_Rect r = val SDL_Rect(  PL_TILE_SIZE*frame + PL_FRAME_OFFSET_HORIZONTAL,
-										0,
+										PL_FRAME_OFFSET_VERTICAL,
 										PL_TILE_SIZE - 2*PL_FRAME_OFFSET_HORIZONTAL,
 										PL_TILE_SIZE );		
 		
@@ -92,6 +93,9 @@ code/await Player(var float x0, var float y0)->
 			
 			var int xf = x + vx*dt/100;
 			var int yf = y + vy*dt/100;
+			
+			var int xcf = collider.x + vx*dt/100;
+			var int ycf = collider.y + vy*dt/100;
  			
 			//_printf("xf = %d, yf = %d, LEVEL_WIDTH = %d, LEVEL_HEIGHT = %d\n",
 			//xf, yf, LEVEL_WIDTH, LEVEL_HEIGHT); 
@@ -105,17 +109,19 @@ code/await Player(var float x0, var float y0)->
 				go_y = false;
 			end
 			
-			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
-			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
+//			var SDL_Rect tmp_x = val SDL_Rect(xf, y, playerSize as int, playerSize as int);
+//			var SDL_Rect tmp_y = val SDL_Rect(x, yf, playerSize as int, playerSize as int);
 			
-			/*
-			var&? Block block;
+			var SDL_Rect tmp_x = val SDL_Rect(xcf, collider.y, playerSize as int, playerSize as int);
+			var SDL_Rect tmp_y = val SDL_Rect(collider.x, ycf, playerSize as int, playerSize as int);
 			
-			loop block in outer.blocks do
-				if (call Intersects(&block!.fg, &tmp_x)) then
+			var&? ObstacleBlock block;
+			
+			loop block in outer.roof do
+				if (call Intersects(&block!.surface, &tmp_x)) then
 					go_x = false;
 				end
-				if (call Intersects(&block!.fg, &tmp_y)) then
+				if (call Intersects(&block!.surface, &tmp_y)) then
 					go_y = false;
 				end
 				if ( go_x == false) and (go_y == false) then
@@ -123,16 +129,28 @@ code/await Player(var float x0, var float y0)->
 				end
 				
 			end
-			*/
+			
 			if go_x then
 				x = xf;
+				xc = xcf;
 			end
 			
 			if go_y then
 				y = yf; 
+				yc = ycf;
 			end
 			
 			call UpdateOrigin();
+
+			var Vec2d vec = call Vec_GetDirection(  playerOrigin_x as int, 
+													playerOrigin_y as int, 
+													target_x, target_y);
+			var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
+			angle = call Vec_AngleBetween(yaxis, vec);
+			//angle = angle;
+			vec = call Vec_Normalize(vec);
+			playerDirection = vec;
+			
 
 			shotSpawner.x = playerOrigin_x + (playerDirection.x * (radius + spawnerOffset));
 			shotSpawner.y = playerOrigin_y + (playerDirection.y * (radius + spawnerOffset));
@@ -176,6 +194,37 @@ code/await Player(var float x0, var float y0)->
 		end
 	with // MOUSE CLICK
 		pool[100] Shot shots;
+		//var& Anim anim = spawn Anim();
+		#if 0
+		code/await Anim (var& Rect fg) -> (event void start) -> FOREVER do
+			await start;
+			loop do
+				watching start do
+					var int i = 1;
+					spawn do
+						every SDL_REDRAW do	
+							//animationFrame = 10;
+							var SDL_Rect clip_rect = call GetFrameRect(io); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
+			
+			
+							fg.x = x;// - outer.camera.x/2;
+							fg.y = y;// - outer.camera.y/2;
+			
+							_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+												&&outer.tx_player_recharge.tex.tex, 
+												&&clip_rect as _SDL_Rect&&,
+												&&fg as _SDL_Rect&&, 
+												angle, null, _SDL_FLIP_NONE);
+			
+						end
+					end
+					loop i in [1 -> 19] do
+						<...>
+					end
+				end
+			end
+		end
+		#endif
 		
 		loop do
 			var _SDL_MouseButtonEvent&& mb;
@@ -197,24 +246,19 @@ code/await Player(var float x0, var float y0)->
 							shotSpeed,
 							shotSize,
 							0) in shots;
-						
+				//emit anim.start;		
 				animationFrame = PL_ANIM_RELOAD_START;
 				_printf("sound\n");
 				await 750ms;
 			end
 		end
-	with
+	with // MOUSE MOVEMENT	
 		var _SDL_MouseMotionEvent&& mse;
 		every mse in SDL_MOUSEMOTION do
-			var Vec2d vec = call Vec_GetDirection(  playerOrigin_x as int, 
-													playerOrigin_y as int, 
-													mse:x, mse:y);
-			var Vec2d yaxis = call Vec_GetDirection( 0, 0, 0, -1);
-			angle = call Vec_AngleBetween(yaxis, vec);
-			//angle = angle;
-			vec = call Vec_Normalize(vec);
-			playerDirection = vec;
 			
+
+			target_x = mse:x;
+			target_y = mse:y;
 			
 		end
 	with 
@@ -230,6 +274,10 @@ code/await Player(var float x0, var float y0)->
 			//animationFrame = 10;
 			var SDL_Rect clip_rect = call GetFrameRect(animationFrame); //val SDL_Rect(0, 0, PL_TILE_SIZE, PL_TILE_SIZE);
 			
+			collider.x = xc;
+			collider.y = yc;
+			_SDL_SetRenderDrawColor(&&outer.sdl!.ren, 0x00,0xFF,0x00,0xFF);
+			_SDL_RenderFillRect(&&outer.sdl!.ren, (&&collider as _SDL_Rect&&));
 			
 			fg.x = x;// - outer.camera.x/2;
 			fg.y = y;// - outer.camera.y/2;
