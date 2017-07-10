@@ -3,19 +3,15 @@
 
 #define BLOCK_SIZE 100
 
+#define BL_EDGE_UP 		0
+#define BL_EDGE_RIGHT 	90
+#define BL_EDGE_DOWN 	180
+#define BL_EDGE_LEFT 	270
 
-#define BL_EDGE_UP 0
-#define BL_EDGE_RIGHT 90
-#define BL_EDGE_DOWN 180
-#define BL_EDGE_LEFT 270
-
-#define BL_CORNER_DOWN_RIGHT 0
-#define BL_CORNER_DOWN_LEFT 90
-#define BL_CORNER_UP_LEFT 180
-#define BL_CORNER_UP_RIGHT 270
-
-//pool[] SDL_Open_Image tx_all;
-//spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif") in tx_all;
+#define BL_CORNER_DOWN_RIGHT 	0
+#define BL_CORNER_DOWN_LEFT 	90
+#define BL_CORNER_UP_LEFT 		180
+#define BL_CORNER_UP_RIGHT 		270
 
 var& SDL_Open_Image tx_COBBLE 			= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/cobblestone.tif");
 var& SDL_Open_Image tx_ROOF_EDGE 		= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/rooftop_edge.png");
@@ -23,10 +19,26 @@ var& SDL_Open_Image tx_ROOF_CORNER 		= spawn SDL_Open_Image( &sdl!.ren, "res/blo
 var& SDL_Open_Image tx_SIDEWALK_CORNER 	= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/sidewalk_corner.png");
 var& SDL_Open_Image tx_SIDEWALK_EDGE 	= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/sidewalk_edge.png");
 var& SDL_Open_Image tx_CRATES 			= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/crates.png");
+var& SDL_Open_Image tx_ASPHALT 			= spawn SDL_Open_Image( &sdl!.ren, "res/blocks/asphalt.tif");
 
-code/await FloorBlock(var int idx_x, var int idx_y, var&? SDL_Open_Image img, var int angle) -> void do
+/*
+code/await Render( var int x, var int y, var&? SDL_Open_Image tx, var int angle) -> void do
+	var SDL_Rect tmp = val SDL_Rect(x - outer.camera.x,
+									y - outer.camera.y,
+									BLOCK_SIZE, BLOCK_SIZE);
+		
+		
+	_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
+						&&tx!.tex.tex, 
+						null, &&tmp as _SDL_Rect&&, 
+						angle, null, _SDL_FLIP_NONE);
+end
+
+*/
+code/await FloorBlock(	var int idx_x, var int idx_y, 
+						var&? SDL_Open_Image img, var int angle) -> void do
 	
-	code/tight X_pixel( var int idx_x ) -> int do
+ 	code/tight X_pixel( var int idx_x ) -> int do
 		escape ((idx_x * BLOCK_SIZE) as int);
 	end	
 	
@@ -40,20 +52,24 @@ code/await FloorBlock(var int idx_x, var int idx_y, var&? SDL_Open_Image img, va
 	var SDL_Rect surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	
 	every SDL_REDRAW do
-		//var& SDL_
+		var SDL_Rect tmp = val SDL_Rect(surface.x - outer.camera.x,
+										surface.y - outer.camera.y,
+										BLOCK_SIZE, BLOCK_SIZE);
+		
+		
 		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
 							&&img!.tex.tex, 
 							null,
-							&&surface as _SDL_Rect&&, 
+							&&tmp as _SDL_Rect&&, 
 							angle, null, _SDL_FLIP_NONE);
-	end;
+	end
 end
 
 
 code/await ObstacleBlock( var int idx_x, var int idx_y, var&? SDL_Open_Image img, var int angle) -> 
 		(var SDL_Rect surface) -> FOREVER do
 	
-	code/tight X_pixel( var int idx_x ) -> int do
+ 	code/tight X_pixel( var int idx_x ) -> int do
 		escape ((idx_x * BLOCK_SIZE) as int);
 	end	
 	
@@ -64,15 +80,23 @@ code/await ObstacleBlock( var int idx_x, var int idx_y, var&? SDL_Open_Image img
 	var int px = call X_pixel(idx_x);
 	var int py = call Y_pixel(idx_y);
 	
-	surface=val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
-	
+	surface = val SDL_Rect(px,py,BLOCK_SIZE,BLOCK_SIZE);
 	every SDL_REDRAW do
 
-		//await outer.renderedPlayer until 1 ms;
+		//spawn Render(surface.x, surface.y, &img, angle) in outer.l1;
+	
+		//await outer.renderedPlayer until 1 ms; 
+		var SDL_Rect tmp = val SDL_Rect(surface.x - outer.camera.x,
+										surface.y - outer.camera.y,
+										BLOCK_SIZE, BLOCK_SIZE);
+										
 		_SDL_RenderCopyEx(  &&outer.sdl!.ren, 
 							&&img!.tex.tex, 
-							null, &&surface as _SDL_Rect&&, 
+							null, &&tmp as _SDL_Rect&&, 
 							angle, null, _SDL_FLIP_NONE);
-	end;
+							
+		//_SDL_SetRenderDrawColor(&&outer.sdl!.ren, 0x00,0xFF,0x00,0xFF);
+		//_SDL_RenderFillRect(&&outer.sdl!.ren, (&&tmp as _SDL_Rect&&));
+	end
 end
 
